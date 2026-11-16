@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Status bar / native accents match the app's dark theme. -->
+    <color name="colorPrimary">#14161B</color>
+    <color name="colorPrimaryDark">#14161B</color>
+    <color name="colorAccent">#5B8CFF</color>
+</resources>

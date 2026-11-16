@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PocketPad.Mobile.ViewModels"
+             xmlns:controls="clr-namespace:PocketPad.Mobile.Controls"
+             x:Class="PocketPad.Mobile.Views.DevicesPage"
+             x:DataType="vm:DevicesViewModel"
+             Title="Cihazlar">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="20,28,20,16" RowSpacing="16">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+            <Image Source="logo.png" WidthRequest="52" HeightRequest="52" VerticalOptions="Center" />
+            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                <Label Text="PocketPad" Style="{StaticResource Title}" />
+                <Label Text="Telefonunuz, bilgisayarınızın touchpad'i ve klavyesi" Style="{StaticResource PageSubtitle}" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <controls:ConnectionBadge Grid.Row="1" />
+
+        <HorizontalStackLayout Grid.Row="2" Spacing="8">
+            <Image Source="ic_monitor.png" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+            <Label Text="Bilgisayarlarım" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+        </HorizontalStackLayout>
+
+        <CollectionView Grid.Row="3" ItemsSource="{Binding Servers}" SelectionMode="None">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="0,40" Spacing="12" HorizontalOptions="Center">
+                    <Border Style="{StaticResource IconTile}" WidthRequest="72" HeightRequest="72" Padding="18" HorizontalOptions="Center">
+                        <Image Source="ic_monitor.png" />
+                    </Border>
+                    <Label Text="Henüz bilgisayar eklenmedi" FontFamily="OpenSansSemibold" HorizontalTextAlignment="Center" />
+                    <Label Text="Bilgisayarda PocketPad'i açıp &quot;Cihaz eşleştir&quot;e basın, sonra aşağıdan &quot;Bilgisayar ekle&quot;yi seçin."
+                           Style="{StaticResource Caption}" HorizontalTextAlignment="Center" MaximumWidthRequest="300" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:PairedServerItem">
+                    <Border Style="{StaticResource Card}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="14">
+                            <Border Style="{StaticResource IconTile}">
+                                <Image Source="ic_monitor.png" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" FontSize="17" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding Address}" Style="{StaticResource Caption}" />
+                            </VerticalStackLayout>
+                            <Border Grid.Column="2" Style="{StaticResource Pill}" BackgroundColor="#263FCF8E" IsVisible="{Binding IsActive}">
+                                <Label Text="Aktif" TextColor="{StaticResource Success}" FontSize="12" FontFamily="OpenSansSemibold" />
+                            </Border>
+
+                            <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Button Text="Bağlan" ImageSource="ic_link.png" ContentLayout="Left, 8"
+                                        IsVisible="{Binding IsActive, Converter={StaticResource InvertBool}}"
+                                        Command="{Binding ConnectCommand, Source={RelativeSource AncestorType={x:Type vm:DevicesViewModel}}, x:DataType=vm:DevicesViewModel}"
+                                        CommandParameter="{Binding .}" />
+                                <Button Text="Bağlantıyı kes" ImageSource="ic_unlink.png" ContentLayout="Left, 8" Style="{StaticResource SubtleButton}"
+                                        IsVisible="{Binding IsActive}"
+                                        Command="{Binding DisconnectCommand, Source={RelativeSource AncestorType={x:Type vm:DevicesViewModel}}, x:DataType=vm:DevicesViewModel}" />
+                                <ImageButton Grid.Column="1" Source="ic_trash.png" BackgroundColor="#1FF0616D" CornerRadius="12"
+                                             WidthRequest="48" HeightRequest="48" Padding="12"
+                                             SemanticProperties.Description="Eşleştirmeyi kaldır"
+                                             Command="{Binding ForgetCommand, Source={RelativeSource AncestorType={x:Type vm:DevicesViewModel}}, x:DataType=vm:DevicesViewModel}"
+                                             CommandParameter="{Binding .}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="4" Text="Bilgisayar ekle" ImageSource="ic_add.png" ContentLayout="Left, 8" Command="{Binding ScanCommand}" />
+    </Grid>
+</ContentPage>

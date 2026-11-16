@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PocketPad.Desktop/PocketPad.Desktop.csproj" />
+    <Project Path="src/PocketPad.Mobile/PocketPad.Mobile.csproj" />
+    <Project Path="src/PocketPad.Shared/PocketPad.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PocketPad.Tests/PocketPad.Tests.csproj" />
+  </Folder>
+</Solution>

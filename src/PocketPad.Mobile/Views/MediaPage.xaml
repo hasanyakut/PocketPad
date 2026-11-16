@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PocketPad.Mobile.ViewModels"
+             xmlns:controls="clr-namespace:PocketPad.Mobile.Controls"
+             xmlns:protocol="clr-namespace:PocketPad.Shared.Protocol;assembly=PocketPad.Shared"
+             x:Class="PocketPad.Mobile.Views.MediaPage"
+             x:DataType="vm:MediaViewModel"
+             Title="Medya">
+    <ScrollView>
+        <VerticalStackLayout Padding="16,28,16,16" Spacing="16">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Medya" Style="{StaticResource Title}" />
+                <Label Text="Bilgisayardaki müzik ve videoyu kontrol edin" Style="{StaticResource PageSubtitle}" />
+            </VerticalStackLayout>
+
+            <controls:ConnectionBadge />
+
+            <Border Style="{StaticResource Card}" Padding="16,24">
+                <VerticalStackLayout Spacing="24" IsEnabled="{Binding Status.IsConnected}">
+                    <Label Text="Oynatma" Style="{StaticResource SectionTitle}" HorizontalOptions="Center" />
+                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="24">
+                        <ImageButton Source="ic_prev.png" Style="{StaticResource RoundButton}" HorizontalOptions="End"
+                                     SemanticProperties.Description="Önceki" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Previous}" />
+                        <ImageButton Grid.Column="1" Source="ic_playpause.png" Style="{StaticResource RoundButton}"
+                                     BackgroundColor="{StaticResource Accent}" WidthRequest="88" HeightRequest="88" CornerRadius="44" Padding="26"
+                                     SemanticProperties.Description="Oynat / Duraklat" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.PlayPause}" />
+                        <ImageButton Grid.Column="2" Source="ic_next.png" Style="{StaticResource RoundButton}" HorizontalOptions="Start"
+                                     SemanticProperties.Description="Sonraki" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Next}" />
+                    </Grid>
+                    <Button Text="Durdur" ImageSource="ic_stop.png" ContentLayout="Left, 8" Style="{StaticResource SubtleButton}"
+                            HorizontalOptions="Center" WidthRequest="160"
+                            Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Stop}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Padding="16,20">
+                <VerticalStackLayout Spacing="18" IsEnabled="{Binding Status.IsConnected}">
+                    <Label Text="Ses" Style="{StaticResource SectionTitle}" HorizontalOptions="Center" />
+                    <Grid ColumnDefinitions="*,*,*">
+                        <VerticalStackLayout Spacing="6">
+                            <ImageButton Source="ic_vol_down.png" Style="{StaticResource RoundButton}"
+                                         SemanticProperties.Description="Sesi azalt" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeDown}" />
+                            <Label Text="Azalt" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <ImageButton Source="ic_mute.png" Style="{StaticResource RoundButton}"
+                                         SemanticProperties.Description="Sessiz" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Mute}" />
+                            <Label Text="Sessiz" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" Spacing="6">
+                            <ImageButton Source="ic_vol_up.png" Style="{StaticResource RoundButton}"
+                                         SemanticProperties.Description="Sesi artır" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeUp}" />
+                            <Label Text="Artır" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

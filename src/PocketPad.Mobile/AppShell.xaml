@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell x:Class="PocketPad.Mobile.AppShell"
+       xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:PocketPad.Mobile.Views"
+       Shell.FlyoutBehavior="Disabled"
+       Shell.NavBarIsVisible="False">
+    <TabBar>
+        <ShellContent Title="Cihazlar" Icon="tab_devices.png" Route="devices" ContentTemplate="{DataTemplate views:DevicesPage}" />
+        <ShellContent Title="Touchpad" Icon="tab_touchpad.png" Route="touchpad" ContentTemplate="{DataTemplate views:TouchpadPage}" />
+        <ShellContent Title="Klavye" Icon="tab_keyboard.png" Route="keyboard" ContentTemplate="{DataTemplate views:KeyboardPage}" />
+        <ShellContent Title="Medya" Icon="tab_media.png" Route="media" ContentTemplate="{DataTemplate views:MediaPage}" />
+    </TabBar>
+</Shell>

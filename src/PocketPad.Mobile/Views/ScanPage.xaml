@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PocketPad.Mobile.ViewModels"
+             x:Class="PocketPad.Mobile.Views.ScanPage"
+             x:DataType="vm:ScanViewModel"
+             Shell.NavBarIsVisible="True"
+             Shell.TabBarIsVisible="False"
+             Title="Bilgisayar ekle">
+    <Grid RowDefinitions="*,Auto">
+        <!-- The camera view is created in code only after camera permission is granted:
+             a reader created before the grant keeps a black preview. -->
+        <ContentView x:Name="CameraHost" BackgroundColor="Black" />
+
+        <!-- Aiming frame -->
+        <Border WidthRequest="220" HeightRequest="220" Stroke="{StaticResource Accent}" StrokeThickness="3"
+                StrokeShape="RoundRectangle 20" BackgroundColor="Transparent" InputTransparent="True"
+                HorizontalOptions="Center" VerticalOptions="Center" IsVisible="{Binding HasCameraPermission}" />
+
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="12" Padding="16">
+            <VerticalStackLayout Spacing="12">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    <Border Style="{StaticResource IconTile}" VerticalOptions="Start">
+                        <Image Source="ic_qr.png" />
+                    </Border>
+                    <Label Grid.Column="1" Text="{Binding Message}" VerticalOptions="Center" />
+                </Grid>
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Accent}" />
+                <Button Text="İptal" Style="{StaticResource SubtleButton}" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
+
+                <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+
+                <HorizontalStackLayout Spacing="8">
+                    <Image Source="ic_wifi.png" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+                    <Label Text="Ağda bulunan bilgisayarlar" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                    <ActivityIndicator IsRunning="True" Color="{StaticResource TextSecondary}" WidthRequest="16" HeightRequest="16"
+                                       IsVisible="{Binding HasFoundPcs, Converter={StaticResource InvertBool}}" />
+                </HorizontalStackLayout>
+                <Label Text="Aranıyor… Bilgisayarda &quot;Cihaz eşleştir&quot; açık olmalı."
+                       Style="{StaticResource Caption}" IsVisible="{Binding HasFoundPcs, Converter={StaticResource InvertBool}}" />
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding FoundPcs}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DiscoveredPc">
+                            <Border BackgroundColor="{StaticResource SurfaceRaised}" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,10">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding PairWithCommand, Source={RelativeSource AncestorType={x:Type vm:ScanViewModel}}, x:DataType=vm:ScanViewModel}"
+                                                          CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Border Style="{StaticResource IconTile}" WidthRequest="38" HeightRequest="38" Padding="8">
+                                        <Image Source="ic_monitor.png" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                        <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding Address}" Style="{StaticResource Caption}" />
+                                    </VerticalStackLayout>
+                                    <Image Grid.Column="2" Source="ic_chevron.png" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PocketPad.Mobile.ViewModels"
+             xmlns:controls="clr-namespace:PocketPad.Mobile.Controls"
+             xmlns:protocol="clr-namespace:PocketPad.Shared.Protocol;assembly=PocketPad.Shared"
+             x:Class="PocketPad.Mobile.Views.KeyboardPage"
+             x:DataType="vm:KeyboardViewModel"
+             Title="Klavye">
+    <ScrollView>
+        <VerticalStackLayout Padding="16,28,16,16" Spacing="16">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Klavye" Style="{StaticResource Title}" />
+                <Label Text="Yazdığınız metin bilgisayara gönderilir" Style="{StaticResource PageSubtitle}" />
+            </VerticalStackLayout>
+
+            <controls:ConnectionBadge />
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Metin gönder" Style="{StaticResource SectionTitle}" />
+                    <Border BackgroundColor="{StaticResource SurfaceRaised}" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,2">
+                        <Entry Text="{Binding Text}" Placeholder="Bilgisayara yazılacak metin" ReturnCommand="{Binding SendTextCommand}"
+                               BackgroundColor="Transparent" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
+                    </Border>
+                    <Button Text="Gönder" ImageSource="ic_send.png" ContentLayout="Left, 8"
+                            Command="{Binding SendTextCommand}" IsEnabled="{Binding Status.IsConnected}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Özel tuşlar" Style="{StaticResource SectionTitle}" />
+                    <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="52,52,52" ColumnSpacing="8" RowSpacing="8"
+                          IsEnabled="{Binding Status.IsConnected}">
+                        <Button Text="Esc" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Escape}" />
+                        <Button Grid.Column="1" Text="Tab" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Tab}" />
+                        <ImageButton Grid.Column="2" Source="ic_backspace.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Geri sil" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Backspace}" />
+                        <ImageButton Grid.Column="3" Source="ic_enter.png" BackgroundColor="{StaticResource Accent}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Enter" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Enter}" />
+
+                        <Button Grid.Row="1" Text="Home" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Home}" />
+                        <ImageButton Grid.Row="1" Grid.Column="1" Source="ic_arrow_up.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Yukarı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Up}" />
+                        <Button Grid.Row="1" Grid.Column="2" Text="End" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.End}" />
+                        <Button Grid.Row="1" Grid.Column="3" Text="Del" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Delete}" />
+
+                        <ImageButton Grid.Row="2" Source="ic_arrow_left.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Sol" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Left}" />
+                        <ImageButton Grid.Row="2" Grid.Column="1" Source="ic_arrow_down.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Aşağı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Down}" />
+                        <ImageButton Grid.Row="2" Grid.Column="2" Source="ic_arrow_right.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                     SemanticProperties.Description="Sağ" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Right}" />
+                        <Button Grid.Row="2" Grid.Column="3" Text="Win" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Windows}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
