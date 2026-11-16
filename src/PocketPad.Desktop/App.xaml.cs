@@ -55,6 +55,10 @@ public partial class App : Application
         services.AddSingleton<SessionRegistry>();
         services.AddSingleton<IInputController, WindowsInputController>();
         services.AddSingleton<InputDispatcher>();
+        services.AddSingleton<PocketPad.Desktop.Media.IMediaStatusProvider, PocketPad.Desktop.Media.WindowsMediaStatusProvider>();
+        services.AddSingleton<PocketPad.Desktop.Media.MediaStatusPublisher>(sp => new PocketPad.Desktop.Media.MediaStatusPublisher(
+            sp.GetRequiredService<PocketPad.Desktop.Media.IMediaStatusProvider>(), sp.GetRequiredService<SessionRegistry>(),
+            sp.GetRequiredService<ILogger<PocketPad.Desktop.Media.MediaStatusPublisher>>()));
         services.AddSingleton<ControlServer>();
 
         services.AddSingleton<TrayIconService>();

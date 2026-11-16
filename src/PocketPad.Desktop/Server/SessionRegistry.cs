@@ -31,6 +31,14 @@ public sealed class SessionRegistry(ServerOptions options, TimeProvider time)
         get { lock (_gate) return _active?.ToSnapshot(); }
     }
 
+    /// <summary>Queues a message to the current control session; false when no phone is in control.</summary>
+    internal bool TrySendToActive(ProtocolMessage message)
+    {
+        ClientSession? active;
+        lock (_gate) active = _active;
+        return active is not null && active.TrySend(message);
+    }
+
     internal bool IsActive(ClientSession session)
     {
         lock (_gate) return _active == session;

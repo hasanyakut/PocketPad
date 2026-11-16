@@ -16,6 +16,8 @@ public class MessageSerializerTests
         new KeyboardTextMessage { Text = "Merhaba dünya ğüşiöç" },
         new KeyboardKeyMessage { Key = KeyCode.F5, Modifiers = KeyModifiers.Control | KeyModifiers.Shift, Action = KeyAction.Down },
         new MediaCommandMessage { Command = MediaCommand.VolumeUp },
+        new MediaStatusMessage { Volume = 35, IsMuted = false, HasSession = true, SourceApp = "Spotify", Title = "Şarkı", Artist = "Sanatçı", Playback = PlaybackState.Playing, CanPlayPause = true, CanNext = true },
+        new MediaCommandResultMessage { Command = MediaCommand.Next, Delivered = true },
         new PingMessage { Timestamp = 1_700_000_000_000 },
         new PongMessage { Timestamp = 1_700_000_000_000 },
         new DisconnectMessage { Reason = RejectReason.ServerShuttingDown },

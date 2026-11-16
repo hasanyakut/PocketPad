@@ -11,6 +11,9 @@ public partial class App : Application
     {
         InitializeComponent();
         UserAppTheme = AppTheme.Dark;
+        // The soft keyboard shrinks the page instead of panning it, so the typing bar and touchpad stay visible above it.
+        Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific.Application.SetWindowSoftInputModeAdjust(
+            this, Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific.WindowSoftInputModeAdjust.Resize);
         _shell = shell;
         _connection = connection;
     }

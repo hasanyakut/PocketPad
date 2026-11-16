@@ -36,6 +36,17 @@ internal sealed class ClientSession
 
     public void Close(RejectReason reason) => _channel.RequestClose(reason);
 
+    /// <summary>True once AuthResult is queued: pushes sent earlier would reach the phone before its handshake completes.</summary>
+    public bool IsReadyForPush { get; private set; }
+
+    /// <summary>Server-initiated message (e.g. media status). Fire-and-forget into the ordered send queue.</summary>
+    public bool TrySend(ProtocolMessage message)
+    {
+        if (!IsReadyForPush) return false;
+        var pending = _channel.SendAsync(message);
+        return !pending.IsCompleted || pending.Result;
+    }
+
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         _ = HandshakeWatchdogAsync(_lifetime.Token);
@@ -83,8 +94,14 @@ internal sealed class ClientSession
                 break;
             case (SessionStatus.Controlling, IInputMessage) when _ctx.Registry.IsActive(this):
                 // Only the single active, authenticated control session reaches the input controller.
-                _ctx.Input.Dispatch(message);
+                var delivered = _ctx.Input.Dispatch(message);
                 _ctx.Registry.ReportInput(this, message);
+                if (message is MediaCommandMessage media)
+                {
+                    // Tell the phone whether Windows accepted the key; whether an app reacted shows in the next status.
+                    await _channel.SendAsync(new MediaCommandResultMessage { Command = media.Command, Delivered = delivered }).ConfigureAwait(false);
+                    _ctx.Media?.RequestRefresh();
+                }
                 break;
             default:
                 _ctx.Logger.LogWarning("Session {Session} from {Remote} sent unauthorized '{Type}' in state {State}.",
@@ -118,6 +135,8 @@ internal sealed class ClientSession
         _status = SessionStatus.Controlling;
         _ctx.Devices.MarkSeen(device.DeviceId, auth.DeviceName);
         await _channel.SendAsync(new AuthResultMessage { Accepted = true, ServerName = _ctx.Identity.ServerName }).ConfigureAwait(false);
+        IsReadyForPush = true;
+        _ctx.Media?.OnControlSessionReady();
         _ctx.Registry.RaiseChanged();
         _ctx.Logger.LogInformation("Device {DeviceId} ({Name}) is now the control session.", device.DeviceId, auth.DeviceName);
     }

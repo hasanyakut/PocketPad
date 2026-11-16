@@ -13,8 +13,8 @@
 
 		<ApplicationTitle>PocketPad</ApplicationTitle>
 		<ApplicationId>com.pocketpad.mobile</ApplicationId>
-		<ApplicationDisplayVersion>0.5.0</ApplicationDisplayVersion>
-		<ApplicationVersion>8</ApplicationVersion>
+		<ApplicationDisplayVersion>0.7.0</ApplicationDisplayVersion>
+		<ApplicationVersion>11</ApplicationVersion>
 
 		<SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
 	</PropertyGroup>

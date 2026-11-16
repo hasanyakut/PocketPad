@@ -289,7 +289,93 @@ yapısı ve işaretli `mouseData`, kesirli tekerlek taşıma ve sıfırlama, uç
 - [ ] Kaydırırken bildirim panelini çekin veya PC'de Wi-Fi'ı kesin: geri dönünce birikmiş kaydırma "oynatılmamalı".
 - APK: `artifacts/PocketPad-0.5.0-arm64.apk` (PC uygulamasının da yeniden başlatılması gerekir).
 
-## Sıradaki işler (Aşama 5 önerisi)
+## Aşama 6 – Windows medya kumandası ✅ (otomatik testler + bu PC'de salt okunur gerçek okuma; telefonla denenmedi)
+
+### Dürüst geri bildirim ilkesi
+Bir medya tuşu göndermek, bir uygulamanın tepki verdiğini kanıtlamaz. Bu yüzden telefon iki ayrı gerçeği gösterir:
+1. **Tuş Windows'a ulaştı mı?** PC her komuttan sonra `MediaCommandResultMessage { Delivered }` döner (`SendInput` gerçekten
+   enjekte ettiyse true; kilit ekranı/UAC gibi durumlarda false → telefonda "Windows tuşu kabul etmedi").
+2. **Gerçekte ne oldu?** PC `MediaStatusMessage` ile gerçek durumu gönderir: sistem sesi (%) ve sessiz durumu
+   (Core Audio, varsayılan çıkış aygıtı) + Windows medya oturumu (`GlobalSystemMediaTransportControlsSessionManager`:
+   hangi uygulama, başlık/sanatçı, çalıyor/duraklatıldı, uygulamanın **desteklediği** komutlar).
+- Uygulama bir komutu desteklemediğini bildirirse (ör. çalma listesi olmayan YouTube videosunda sonraki/önceki) o düğme
+  devre dışı kalır ve "… şu an desteklemiyor: sonraki, önceki" yazar. Çalan medya yoksa düğmeler çalışır ama
+  "Tuş Windows'a iletildi, ancak şu an medya çalan bir uygulama görünmüyor" uyarısı verilir. Hiçbir durumda "başarılı" denmez;
+  başarı göstergesi bir sonraki durum güncellemesindeki gerçek değerdir (ses yüzdesi, çalıyor/duraklatıldı).
+- Bağlantı koparsa eski PC durumu hemen silinir, düğmeler kapanır.
+
+### Windows
+- Tuşlar: `VK_VOLUME_UP/DOWN/MUTE`, `VK_MEDIA_PLAY_PAUSE/NEXT_TRACK/PREV_TRACK` (+ STOP) — tek `SendInput` çağrısında
+  key down + key up, `KEYEVENTF_EXTENDEDKEY` ile.
+- `Media/WindowsMediaStatusProvider` (salt okunur; sesi/oynatmayı asla değiştirmez), `Media/MediaStatusPublisher`
+  (yalnızca bir telefon kontroldeyken saniyede bir okur, **değiştiğinde** gönderir; komuttan 200 ms ve 800 ms sonra ek okuma).
+- Hedef çerçeve `net10.0-windows10.0.19041.0` (Windows 10 2004+; medya oturumu WinRT API'si için).
+- Sıralama hatası düzeltildi: ilk durum mesajı AuthResult'tan önce kuyruğa girebiliyordu (telefon el sıkışma sırasında
+  atıyordu) → oturum yalnızca AuthResult kuyruğa girdikten sonra "push"a açılıyor.
+- Telefon sunucuya özel mesaj (`media.status`) gönderirse yetkisiz sayılır.
+
+### Android
+- Medya ekranı: "Şu an çalan" kartı (uygulama, başlık, sanatçı, durum etiketi), 104 dp oynat/duraklat (çalarken duraklat
+  ikonu), 72 dp önceki/sonraki, gerçek ses seviyesi çubuğu + yüzde, sessizken kırmızı vurgulu "Sesi aç" düğmesi,
+  son basışın sonucu (yeşil: iletildi, sarı: sorun). Dokunma titreşimi (`HapticFeedback`, `VIBRATE` izni) + basınca küçülme.
+
+### Test sonuçları
+| Senaryo | Nasıl doğrulandı | Sonuç |
+|---|---|---|
+| Altı komutun key down+up olarak gönderilmesi | Birim: VK kodu, down→up sırası, extended bayrağı | ✅ |
+| Komutun PC'ye ulaşıp onaylanması | Entegrasyon: 6 komut → controller'da 6 çağrı + 6 `Delivered=true` | ✅ |
+| Windows'un reddetmesi | Entegrasyon: controller false → `Delivered=false` | ✅ |
+| Komut sonrası gerçek durumun gelmesi | Entegrasyon: ses 40→42 değişimi komuttan sonra telefona ulaşıyor | ✅ |
+| Art arda hızlı tıklama | Entegrasyon: 30 hızlı komut, hepsi sırayla iletildi ve onaylandı | ✅ |
+| Bağlantı kesilmesi | Entegrasyon: kesildikten sonra durum okunmuyor/gönderilmiyor, komut gönderilemiyor | ✅ |
+| Desteklenmeyen komutlar | Birim: oturum sonraki/önceki desteklemiyorsa yalnızca onlar kapanıyor; ses hep açık | ✅ |
+| Windows sistem sesi (gerçek) | Bu PC'de salt okunur okuma: ses %20, sessiz=açık, medya oturumu yok | ✅ okuma çalışıyor |
+| YouTube / Spotify açıkken tuşlar | Gerçek uygulamalarla **denenmedi** (aşağıdaki manuel adımlar) | ⏳ |
+
+### Gerçek cihaz test adımları
+- [ ] **Sistem sesi:** Azalt/Artır → telefondaki yüzde Windows ses göstergesiyle aynı değişmeli (Windows adımı %2).
+      Sessiz → kart "Sessiz · %x", düğme kırmızı "Sesi aç"; tekrar basınca açılmalı.
+- [ ] **YouTube (Chrome/Edge):** kart "YouTube başlığı · Google Chrome" göstermeli; oynat/duraklat durumu değiştirmeli.
+      Çalma listesi yoksa sonraki/önceki kapalı ve "desteklemiyor" notu görünmeli.
+- [ ] **Spotify:** başlık/sanatçı görünmeli; sonraki/önceki parça değiştirmeli ve kart yeni parçayı göstermeli.
+- [ ] **Medya yokken:** "Şu an çalan medya yok"; oynat tuşu sarı uyarı vermeli (başarılı gibi görünmemeli).
+- [ ] **Hızlı tıklama:** Artır'a 10 kez hızlıca basın → Windows'ta yaklaşık +%20, telefon aynı değeri göstermeli.
+- [ ] **Bağlantı kesilmesi:** PC'de PocketPad'i kapatın → kart "Bağlı değil", düğmeler kapalı; eski değer kalmamalı.
+- [ ] **Kilit ekranı (Win+L):** tuşa basınca "Windows tuşu kabul etmedi" görünebilir (Windows sürümüne bağlı).
+- APK: `artifacts/PocketPad-0.6.0-arm64.apk`; PC uygulaması yeniden başlatılmalı.
+
+## Ek: Touchpad'den canlı yazma ✅ (mantık testli; telefonda denenmedi)
+- Kullanıcı isteği: touchpad altındaki "Sol tık" yerine "Klavye" düğmesi; basınca yazma alanı telefon klavyesiyle açılsın.
+  Sol tık touchpad'e dokunarak yapılmaya devam ediyor; "Sağ tık" düğmesi yerinde.
+- Klavye düğmesi yazma çubuğunu açar ve alanı odaklayarak telefon klavyesini açar ("Klavyeyi kapat" ile kapanır,
+  sekme değiştirince otomatik kapanır). Sayfa klavye açılınca küçülür (`WindowSoftInputModeAdjust.Resize`).
+- **Canlı yazma:** alandaki her değişiklik `Shared/Input/TypingDiff` ile tuş vuruşlarına çevrilir: silinen kuyruk kadar
+  Backspace, ardından eklenen metin (otomatik düzeltme/kelime değiştirmeyi de aynı yolla karşılar; emoji tek Backspace).
+  Gönderim touchpad ile aynı sıralı kuyruktan (`InputSender`) yapılır; bağlantı yokken hiçbir şey gitmez.
+- Enter (klavyedeki gönder tuşu veya çubuktaki ↵) PC'ye Enter gönderir ve alanı temizler; alan boşken ⌫ düğmesi PC'de
+  doğrudan siler. Alan 200 karakteri aşınca PC'ye Backspace göndermeden sessizce temizlenir.
+- Testler (+12, toplam 208): yazma, silme, çoklu silme, otomatik düzeltme, Türkçe karakterler, emoji, uzun yapıştırmanın
+  protokol sınırına bölünmesi, değişiklik yokken mesaj olmaması.
+- APK: `artifacts/PocketPad-0.6.1-arm64.apk` (yalnız telefon tarafı değişti).
+
+## Ek: Klavye sekmesi = canlı yazma + kısayol paneli ✅ (emülatörde görünüm kontrol edildi; telefonla denenmedi)
+- Kullanıcı isteği: Klavye sekmesi de touchpad'deki canlı yazma gibi çalışsın, orası daha çok kısayol yeri olsun.
+- Canlı yazma alanı ortak kontrol oldu: `Controls/LiveTypingBar` (Touchpad ve Klavye sayfası aynı kodu kullanıyor;
+  `ILiveTypingSink` ile VM'lere bağlı). Eski "yaz + Gönder" alanı kaldırıldı.
+- Kısayol paneli (dokunma titreşimi + basma animasyonu), 3 sütunlu ızgara, uzun adlar iki satıra kırılıyor (`Controls/ShortcutTile`):
+  - **Düzenleme:** Kopyala, Yapıştır, Kes, Geri al, Yinele, Tümünü seç, Kaydet, Bul, Yazdır.
+  - **Pencereler:** Alt+Tab, Alt+F4, Win+D, Win+Tab, Win+E, Başlat (Win), Ekran alıntısı (Win+Shift+S),
+    Görev Yöneticisi (Ctrl+Shift+Esc), Ayarlar (Win+I).
+  - **Tarayıcı:** Yeni sekme, Sekmeyi kapat, Kapananı aç, Sonraki/Önceki sekme, Yenile, Yakınlaştır/Uzaklaştır,
+    Tam ekran, Adres çubuğu (Ctrl+L), Geri/İleri (Alt+←/→).
+  - **Gezinme tuşları:** Esc, Tab, Home, End, PgUp, PgDn, Del, oklar, Enter. **F1–F12.**
+- Protokol: `KeyCode`'a A–Z, 0–9, `Plus`, `Minus` eklendi; Windows'ta VK_A..VK_Z, VK_0..VK_9, VK_OEM_PLUS/MINUS.
+  **Telefon ve PC birlikte güncellenmeli:** eski PC sürümü yeni tuş adlarını tanımaz ve bağlantıyı protokol hatasıyla kapatır.
+- Bilinen Windows sınırları: Win+L (kilitleme) ve Ctrl+Alt+Del `SendInput` ile tetiklenemez, bu yüzden eklenmedi.
+- Testler (+11, toplam 219): harf/rakam/± VK eşlemeleri, Ctrl+C ve Win+Shift+S tuş sıraları, yeni tuşların JSON'da adla taşınması.
+- APK: `artifacts/PocketPad-0.7.0-arm64.apk`.
+
+## Sıradaki işler (Aşama 7 önerisi)
 - Telefonda canlı yazma (her tuşta gönderme) ve Ctrl/Alt/Shift kısayol tuşları.
 - İki parmak kaydırma (scroll, `MOUSEEVENTF_WHEEL`/`HWHEEL`) ve dokun-sürükle (sol tuşu basılı tutarak sürükleme).
 - Touchpad ivmesi (hıza bağlı kazanç) ve tek tık gecikmesini azaltmak için isteğe bağlı "çift dokunmayı kapat" ayarı.

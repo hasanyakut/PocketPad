@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PocketPad.Mobile.Controls;
 using PocketPad.Mobile.Services;
 using PocketPad.Shared.Client;
 using PocketPad.Shared.Input;
@@ -19,7 +20,7 @@ public abstract class InputViewModelBase(IConnectionService connection, Connecti
 /// Touchpad: gestures are handed to an <see cref="InputSender"/> which merges moves to ~60 Hz on a
 /// background task, so the UI thread never waits on the network. Nothing is sent while disconnected.
 /// </summary>
-public sealed partial class TouchpadViewModel : InputViewModelBase
+public sealed partial class TouchpadViewModel : InputViewModelBase, ILiveTypingSink
 {
     public const double MinSensitivity = TouchpadSettings.MinSensitivity;
     public const double MaxSensitivity = TouchpadSettings.MaxSensitivity;
@@ -108,37 +109,29 @@ public sealed partial class TouchpadViewModel : InputViewModelBase
     }
 
     [RelayCommand]
-    private void LeftClick() => Click(MouseButton.Left, MouseClickAction.Click);
+    private void RightClick() => Click(MouseButton.Right, MouseClickAction.Click);
+
+    // ---- Live typing (the "Klavye" button under the touchpad) ----
+
+    /// <summary>True while the typing bar (and the phone's soft keyboard) is open.</summary>
+    [ObservableProperty] public partial bool IsTyping { get; set; }
 
     [RelayCommand]
-    private void RightClick() => Click(MouseButton.Right, MouseClickAction.Click);
+    private void ToggleTyping() => IsTyping = !IsTyping;
+
+    /// <summary>The typing field changed: send exactly the keystrokes that make the PC match (letters, Backspaces).</summary>
+    public void OnTypingChanged(string? oldText, string? newText)
+    {
+        foreach (var message in TypingDiff.ToMessages(oldText, newText))
+            _sender.Send(message);
+    }
+
+    public void SendEnter() => _sender.Send(new KeyboardKeyMessage { Key = KeyCode.Enter });
+
+    /// <summary>Backspace when the field is already empty (the soft keyboard reports nothing then).</summary>
+    public void SendBackspace() => _sender.Send(new KeyboardKeyMessage { Key = KeyCode.Backspace });
 
     private void Click(MouseButton button, MouseClickAction action) =>
         _sender.Send(new MouseClickMessage { Button = button, Action = action });
 }
 
-public sealed partial class KeyboardViewModel(IConnectionService connection, ConnectionStatusViewModel status)
-    : InputViewModelBase(connection, status)
-{
-    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendTextCommand))]
-    public partial string Text { get; set; } = "";
-
-    private bool CanSendText() => !string.IsNullOrEmpty(Text);
-
-    [RelayCommand(CanExecute = nameof(CanSendText))]
-    private async Task SendTextAsync()
-    {
-        var text = Text.Length > ProtocolInfo.MaxTextLength ? Text[..ProtocolInfo.MaxTextLength] : Text;
-        if (await SendAsync(new KeyboardTextMessage { Text = text })) Text = "";
-    }
-
-    [RelayCommand]
-    private Task SendKeyAsync(KeyCode key) => SendAsync(new KeyboardKeyMessage { Key = key }).AsTask();
-}
-
-public sealed partial class MediaViewModel(IConnectionService connection, ConnectionStatusViewModel status)
-    : InputViewModelBase(connection, status)
-{
-    [RelayCommand]
-    private Task SendMediaAsync(MediaCommand command) => SendAsync(new MediaCommandMessage { Command = command }).AsTask();
-}

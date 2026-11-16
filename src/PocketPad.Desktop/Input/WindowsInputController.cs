@@ -164,6 +164,10 @@ public sealed partial class WindowsInputController(ILogger<WindowsInputControlle
         KeyCode.Windows => NativeMethods.VK_LWIN,
         KeyCode.ContextMenu => 0x5D,
         >= KeyCode.F1 and <= KeyCode.F12 => (ushort)(0x70 + (key - KeyCode.F1)),
+        >= KeyCode.A and <= KeyCode.Z => (ushort)('A' + (key - KeyCode.A)),     // VK_A..VK_Z = 'A'..'Z'
+        >= KeyCode.D0 and <= KeyCode.D9 => (ushort)('0' + (key - KeyCode.D0)),  // VK_0..VK_9 = '0'..'9'
+        KeyCode.Plus => 0xBB,   // VK_OEM_PLUS
+        KeyCode.Minus => 0xBD,  // VK_OEM_MINUS
         _ => throw new ArgumentOutOfRangeException(nameof(key)),
     };
 

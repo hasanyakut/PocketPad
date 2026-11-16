@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using PocketPad.Desktop.Input;
+using PocketPad.Desktop.Media;
 using PocketPad.Desktop.Security;
 using PocketPad.Desktop.Server;
 using PocketPad.Shared.Client;
@@ -47,8 +48,9 @@ internal sealed class TestHost : IAsyncDisposable
         Pairing = new PairingService(Identity, options, TimeProvider.System);
         Registry = new SessionRegistry(options, TimeProvider.System);
         // Never the real WindowsInputController in tests: it would move the developer's mouse.
+        Media = new MediaStatusPublisher(MediaProvider, Registry, NullLogger<MediaStatusPublisher>.Instance, TimeSpan.FromMilliseconds(100));
         Server = new ControlServer(options, Identity, Certificates, Pairing, Devices, Approval, Registry,
-            new InputDispatcher(Input), TimeProvider.System, NullLogger<ControlServer>.Instance);
+            new InputDispatcher(Input), TimeProvider.System, NullLogger<ControlServer>.Instance, Media);
     }
 
     public ServerOptions Options { get; }
@@ -60,6 +62,8 @@ internal sealed class TestHost : IAsyncDisposable
     public ControlServer Server { get; }
     public TestApproval Approval { get; } = new();
     public RecordingInputController Input { get; } = new();
+    public FakeMediaStatusProvider MediaProvider { get; } = new();
+    public MediaStatusPublisher Media { get; }
     public int Port => Server.Port;
     public string Fingerprint => Server.CertificateFingerprint;
 
@@ -239,5 +243,24 @@ internal static class TestExtensions
         {
             return (messages, null);
         }
+    }
+}
+
+/// <summary>Stands in for the real Windows reader so tests never depend on (or read) the machine's audio/media state.</summary>
+internal sealed class FakeMediaStatusProvider : IMediaStatusProvider
+{
+    private MediaStatusMessage _status = new() { Volume = 40, IsMuted = false, HasSession = false };
+    public int Reads;
+
+    public MediaStatusMessage Status
+    {
+        get { lock (this) return _status; }
+        set { lock (this) _status = value; }
+    }
+
+    public Task<MediaStatusMessage> GetStatusAsync(CancellationToken cancellationToken)
+    {
+        Interlocked.Increment(ref Reads);
+        return Task.FromResult(Status);
     }
 }

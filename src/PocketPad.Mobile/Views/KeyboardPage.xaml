@@ -6,56 +6,112 @@
              xmlns:protocol="clr-namespace:PocketPad.Shared.Protocol;assembly=PocketPad.Shared"
              x:Class="PocketPad.Mobile.Views.KeyboardPage"
              x:DataType="vm:KeyboardViewModel"
+             x:Name="Page"
              Title="Klavye">
     <ScrollView>
-        <VerticalStackLayout Padding="16,28,16,16" Spacing="16">
+        <VerticalStackLayout Padding="16,28,16,16" Spacing="14">
             <VerticalStackLayout Spacing="2">
                 <Label Text="Klavye" Style="{StaticResource Title}" />
-                <Label Text="Yazdığınız metin bilgisayara gönderilir" Style="{StaticResource PageSubtitle}" />
+                <Label Text="Canlı yazma ve kısayollar" Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
             <controls:ConnectionBadge />
 
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="Metin gönder" Style="{StaticResource SectionTitle}" />
-                    <Border BackgroundColor="{StaticResource SurfaceRaised}" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,2">
-                        <Entry Text="{Binding Text}" Placeholder="Bilgisayara yazılacak metin" ReturnCommand="{Binding SendTextCommand}"
-                               BackgroundColor="Transparent" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
-                    </Border>
-                    <Button Text="Gönder" ImageSource="ic_send.png" ContentLayout="Left, 8"
-                            Command="{Binding SendTextCommand}" IsEnabled="{Binding Status.IsConnected}" />
+            <!-- Live typing, same as the touchpad's Klavye bar -->
+            <controls:LiveTypingBar Sink="{Binding .}" IsEnabled="{Binding Status.IsConnected}" />
+
+            <VerticalStackLayout x:Name="Shortcuts" Spacing="14" IsEnabled="{Binding Status.IsConnected}">
+                <VerticalStackLayout.Triggers>
+                    <DataTrigger TargetType="VerticalStackLayout" Binding="{Binding Status.IsConnected}" Value="False">
+                        <Setter Property="Opacity" Value="0.4" />
+                    </DataTrigger>
+                </VerticalStackLayout.Triggers>
+
+                <!-- Shortcut groups -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Groups}" Spacing="14">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ShortcutGroup">
+                            <Border Style="{StaticResource Card}" Padding="12,14">
+                                <VerticalStackLayout Spacing="8">
+                                    <HorizontalStackLayout Spacing="8" Margin="4,0">
+                                        <Image Source="{Binding Icon}" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+                                        <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                    <!-- Rows of three on a real 3-column grid, so long names wrap to two lines. -->
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}" Spacing="8">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:ShortcutRow">
+                                                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                                                    <controls:ShortcutTile Item="{Binding A}" Tapped="OnShortcutTapped" />
+                                                    <controls:ShortcutTile Grid.Column="1" Item="{Binding B}" Tapped="OnShortcutTapped" />
+                                                    <controls:ShortcutTile Grid.Column="2" Item="{Binding C}" Tapped="OnShortcutTapped" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
                 </VerticalStackLayout>
-            </Border>
 
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="Özel tuşlar" Style="{StaticResource SectionTitle}" />
-                    <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="52,52,52" ColumnSpacing="8" RowSpacing="8"
-                          IsEnabled="{Binding Status.IsConnected}">
-                        <Button Text="Esc" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Escape}" />
-                        <Button Grid.Column="1" Text="Tab" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Tab}" />
-                        <ImageButton Grid.Column="2" Source="ic_backspace.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Geri sil" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Backspace}" />
-                        <ImageButton Grid.Column="3" Source="ic_enter.png" BackgroundColor="{StaticResource Accent}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Enter" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Enter}" />
+                <!-- Navigation keys -->
+                <Border Style="{StaticResource Card}" Padding="12,14">
+                    <VerticalStackLayout Spacing="10">
+                        <HorizontalStackLayout Spacing="8" Margin="4,0">
+                            <Image Source="ic_keys.png" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+                            <Label Text="Gezinme tuşları" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="52,52,52" ColumnSpacing="8" RowSpacing="8">
+                            <Button Text="Esc" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Escape}" />
+                            <Button Grid.Column="1" Text="Tab" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Tab}" />
+                            <Button Grid.Column="2" Text="Home" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Home}" />
+                            <Button Grid.Column="3" Text="End" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.End}" />
 
-                        <Button Grid.Row="1" Text="Home" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Home}" />
-                        <ImageButton Grid.Row="1" Grid.Column="1" Source="ic_arrow_up.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Yukarı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Up}" />
-                        <Button Grid.Row="1" Grid.Column="2" Text="End" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.End}" />
-                        <Button Grid.Row="1" Grid.Column="3" Text="Del" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Delete}" />
+                            <Button Grid.Row="1" Text="PgUp" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.PageUp}" />
+                            <ImageButton Grid.Row="1" Grid.Column="1" Source="ic_arrow_up.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                         SemanticProperties.Description="Yukarı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Up}" />
+                            <Button Grid.Row="1" Grid.Column="2" Text="PgDn" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.PageDown}" />
+                            <Button Grid.Row="1" Grid.Column="3" Text="Del" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Delete}" />
 
-                        <ImageButton Grid.Row="2" Source="ic_arrow_left.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Sol" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Left}" />
-                        <ImageButton Grid.Row="2" Grid.Column="1" Source="ic_arrow_down.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Aşağı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Down}" />
-                        <ImageButton Grid.Row="2" Grid.Column="2" Source="ic_arrow_right.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
-                                     SemanticProperties.Description="Sağ" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Right}" />
-                        <Button Grid.Row="2" Grid.Column="3" Text="Win" Style="{StaticResource KeyButton}" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Windows}" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
+                            <ImageButton Grid.Row="2" Source="ic_arrow_left.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                         SemanticProperties.Description="Sol" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Left}" />
+                            <ImageButton Grid.Row="2" Grid.Column="1" Source="ic_arrow_down.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                         SemanticProperties.Description="Aşağı" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Down}" />
+                            <ImageButton Grid.Row="2" Grid.Column="2" Source="ic_arrow_right.png" BackgroundColor="{StaticResource SurfaceRaised}" CornerRadius="10" Padding="14"
+                                         SemanticProperties.Description="Sağ" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Right}" />
+                            <ImageButton Grid.Row="2" Grid.Column="3" Source="ic_enter.png" BackgroundColor="{StaticResource Accent}" CornerRadius="10" Padding="14"
+                                         SemanticProperties.Description="Enter" Command="{Binding SendKeyCommand}" CommandParameter="{x:Static protocol:KeyCode.Enter}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Function keys -->
+                <Border Style="{StaticResource Card}" Padding="12,14">
+                    <VerticalStackLayout Spacing="8">
+                        <HorizontalStackLayout Spacing="8" Margin="4,0">
+                            <Image Source="ic_function.png" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+                            <Label Text="F tuşları" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding FunctionKeys}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ShortcutItem">
+                                    <Border FlexLayout.Basis="16.66%" Padding="3" StrokeThickness="0" BackgroundColor="Transparent">
+                                        <Border BackgroundColor="{StaticResource SurfaceRaised}" StrokeThickness="0" StrokeShape="RoundRectangle 10"
+                                                HeightRequest="46">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="OnFunctionKeyTapped" />
+                                            </Border.GestureRecognizers>
+                                            <Label Text="{Binding Title}" FontFamily="OpenSansSemibold" FontSize="13"
+                                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                                        </Border>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -414,3 +414,47 @@ public class ScrollPipelineTests
         Assert.Equal(["wheel 10 v", "wheel 1 v", "wheel -1 v", "wheel 2 h"], controller.Calls);
     }
 }
+
+public class ShortcutKeyTests
+{
+    [Theory]
+    [InlineData(KeyCode.A, 0x41)]
+    [InlineData(KeyCode.C, 0x43)]
+    [InlineData(KeyCode.Z, 0x5A)]
+    [InlineData(KeyCode.D0, 0x30)]
+    [InlineData(KeyCode.D9, 0x39)]
+    [InlineData(KeyCode.Plus, 0xBB)]
+    [InlineData(KeyCode.Minus, 0xBD)]
+    public void LettersDigitsAndPlusMinus_MapToVirtualKeys(KeyCode key, int vk) =>
+        Assert.Equal(vk, WindowsInputController.VirtualKey(key));
+
+    [Fact]
+    public void LettersAreNotExtendedKeys() =>
+        Assert.False(WindowsInputController.IsExtended(WindowsInputController.VirtualKey(KeyCode.C)));
+
+    [Fact]
+    public void CtrlC_IsCtrlDown_CDown_CUp_CtrlUp()
+    {
+        var inputs = WindowsInputController.BuildKey(KeyCode.C, KeyModifiers.Control, KeyAction.Press);
+        Assert.Equal(
+            [(NativeMethods.VK_CONTROL, false), ((ushort)'C', false), ((ushort)'C', true), (NativeMethods.VK_CONTROL, true)],
+            inputs.Select(i => (i.U.ki.wVk, (i.U.ki.dwFlags & NativeMethods.KEYEVENTF_KEYUP) != 0)));
+    }
+
+    [Fact]
+    public void WinShiftS_HoldsBothModifiers_AroundTheKey()
+    {
+        var inputs = WindowsInputController.BuildKey(KeyCode.S, KeyModifiers.Windows | KeyModifiers.Shift, KeyAction.Press);
+        Assert.Equal(
+            [NativeMethods.VK_SHIFT, NativeMethods.VK_LWIN, (ushort)'S', (ushort)'S', NativeMethods.VK_LWIN, NativeMethods.VK_SHIFT],
+            inputs.Select(i => i.U.ki.wVk));
+    }
+
+    [Fact]
+    public void ShortcutMessage_SerializesNewKeysByName()
+    {
+        var bytes = MessageSerializer.Serialize(new KeyboardKeyMessage { Key = KeyCode.V, Modifiers = KeyModifiers.Control });
+        Assert.Contains("\"key\":\"V\"", System.Text.Encoding.UTF8.GetString(bytes));
+        Assert.Equal(new KeyboardKeyMessage { Key = KeyCode.V, Modifiers = KeyModifiers.Control }, MessageSerializer.Deserialize(bytes).Message);
+    }
+}

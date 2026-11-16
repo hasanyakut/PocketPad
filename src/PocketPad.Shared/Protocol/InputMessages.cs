@@ -16,6 +16,15 @@ public enum KeyCode
     Left, Up, Right, Down, Home, End, PageUp, PageDown,
     F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
     PrintScreen, Windows, ContextMenu,
+
+    // Letters and digits (for shortcuts such as Ctrl+C or Win+D; typed text goes through KeyboardTextMessage).
+    A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    D0, D1, D2, D3, D4, D5, D6, D7, D8, D9,
+
+    /// <summary>The "+ / =" key (Ctrl+Plus = zoom in).</summary>
+    Plus,
+    /// <summary>The "- / _" key (Ctrl+Minus = zoom out).</summary>
+    Minus,
 }
 
 public enum MediaCommand { PlayPause, Stop, Next, Previous, VolumeUp, VolumeDown, Mute }

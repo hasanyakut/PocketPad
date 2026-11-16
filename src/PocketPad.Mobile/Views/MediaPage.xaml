@@ -8,53 +8,114 @@
              x:DataType="vm:MediaViewModel"
              Title="Medya">
     <ScrollView>
-        <VerticalStackLayout Padding="16,28,16,16" Spacing="16">
+        <VerticalStackLayout Padding="16,28,16,16" Spacing="14">
             <VerticalStackLayout Spacing="2">
                 <Label Text="Medya" Style="{StaticResource Title}" />
-                <Label Text="Bilgisayardaki müzik ve videoyu kontrol edin" Style="{StaticResource PageSubtitle}" />
+                <Label Text="Bilgisayarın medya kumandası" Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
             <controls:ConnectionBadge />
 
-            <Border Style="{StaticResource Card}" Padding="16,24">
-                <VerticalStackLayout Spacing="24" IsEnabled="{Binding Status.IsConnected}">
-                    <Label Text="Oynatma" Style="{StaticResource SectionTitle}" HorizontalOptions="Center" />
-                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="24">
-                        <ImageButton Source="ic_prev.png" Style="{StaticResource RoundButton}" HorizontalOptions="End"
-                                     SemanticProperties.Description="Önceki" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Previous}" />
-                        <ImageButton Grid.Column="1" Source="ic_playpause.png" Style="{StaticResource RoundButton}"
-                                     BackgroundColor="{StaticResource Accent}" WidthRequest="88" HeightRequest="88" CornerRadius="44" Padding="26"
-                                     SemanticProperties.Description="Oynat / Duraklat" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.PlayPause}" />
-                        <ImageButton Grid.Column="2" Source="ic_next.png" Style="{StaticResource RoundButton}" HorizontalOptions="Start"
-                                     SemanticProperties.Description="Sonraki" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Next}" />
+            <!-- Now playing: only what the PC reports -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Border Style="{StaticResource IconTile}" WidthRequest="52" HeightRequest="52" Padding="13" VerticalOptions="Start">
+                        <Image Source="ic_music.png" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="{Binding NowPlayingTitle}" FontFamily="OpenSansSemibold" FontSize="16" LineBreakMode="TailTruncation" MaxLines="2" />
+                        <Label Text="{Binding NowPlayingSubtitle}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" MaxLines="2" />
+                    </VerticalStackLayout>
+                    <Border Grid.Column="2" Style="{StaticResource Pill}" BackgroundColor="#265B8CFF" VerticalOptions="Start"
+                            IsVisible="{Binding PlaybackText, Converter={StaticResource NotNullConverter}}">
+                        <Label Text="{Binding PlaybackText}" TextColor="{StaticResource Accent}" FontSize="12" FontFamily="OpenSansSemibold" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Playback -->
+            <Border Style="{StaticResource Card}" Padding="16,22">
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="20">
+                        <VerticalStackLayout Spacing="6" HorizontalOptions="End">
+                            <ImageButton Source="ic_prev.png" Style="{StaticResource RoundButton}" WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="22"
+                                         IsEnabled="{Binding PreviousEnabled}" SemanticProperties.Description="Önceki parça"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Previous}" />
+                            <Label Text="Önceki" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <ImageButton Source="{Binding PlayPauseIcon}" Style="{StaticResource RoundButton}" BackgroundColor="{StaticResource Accent}"
+                                         WidthRequest="104" HeightRequest="104" CornerRadius="52" Padding="32"
+                                         IsEnabled="{Binding PlayPauseEnabled}" SemanticProperties.Description="Oynat / Duraklat"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.PlayPause}" />
+                            <Label Text="Oynat / Duraklat" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" Spacing="6" HorizontalOptions="Start">
+                            <ImageButton Source="ic_next.png" Style="{StaticResource RoundButton}" WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="22"
+                                         IsEnabled="{Binding NextEnabled}" SemanticProperties.Description="Sonraki parça"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Next}" />
+                            <Label Text="Sonraki" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                        </VerticalStackLayout>
                     </Grid>
-                    <Button Text="Durdur" ImageSource="ic_stop.png" ContentLayout="Left, 8" Style="{StaticResource SubtleButton}"
-                            HorizontalOptions="Center" WidthRequest="160"
-                            Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Stop}" />
+                    <Label Text="{Binding SupportNote}" Style="{StaticResource Caption}" TextColor="{StaticResource Warning}"
+                           HorizontalTextAlignment="Center" IsVisible="{Binding SupportNote, Converter={StaticResource NotNullConverter}}" />
                 </VerticalStackLayout>
             </Border>
 
-            <Border Style="{StaticResource Card}" Padding="16,20">
-                <VerticalStackLayout Spacing="18" IsEnabled="{Binding Status.IsConnected}">
-                    <Label Text="Ses" Style="{StaticResource SectionTitle}" HorizontalOptions="Center" />
+            <!-- System volume (real value read from Windows) -->
+            <Border Style="{StaticResource Card}" Padding="16,18">
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Image Source="{Binding VolumeIcon}" WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="Sistem sesi" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding VolumeText}" FontFamily="OpenSansSemibold" FontSize="18" VerticalOptions="Center" />
+                    </Grid>
+                    <ProgressBar Progress="{Binding VolumeLevel}" ProgressColor="{StaticResource Accent}" HeightRequest="8"
+                                 IsVisible="{Binding VolumeKnown}">
+                        <ProgressBar.Triggers>
+                            <DataTrigger TargetType="ProgressBar" Binding="{Binding IsMuted}" Value="True">
+                                <Setter Property="Opacity" Value="0.35" />
+                            </DataTrigger>
+                        </ProgressBar.Triggers>
+                    </ProgressBar>
                     <Grid ColumnDefinitions="*,*,*">
                         <VerticalStackLayout Spacing="6">
-                            <ImageButton Source="ic_vol_down.png" Style="{StaticResource RoundButton}"
-                                         SemanticProperties.Description="Sesi azalt" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeDown}" />
+                            <ImageButton Source="ic_vol_down.png" Style="{StaticResource RoundButton}" WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="22"
+                                         IsEnabled="{Binding VolumeEnabled}" SemanticProperties.Description="Sesi azalt"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeDown}" />
                             <Label Text="Azalt" Style="{StaticResource Caption}" HorizontalOptions="Center" />
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <ImageButton Source="ic_mute.png" Style="{StaticResource RoundButton}"
-                                         SemanticProperties.Description="Sessiz" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Mute}" />
-                            <Label Text="Sessiz" Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                            <ImageButton Source="ic_mute.png" Style="{StaticResource RoundButton}" WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="22"
+                                         IsEnabled="{Binding VolumeEnabled}" SemanticProperties.Description="Sessiz / Sesi aç"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.Mute}">
+                                <ImageButton.Triggers>
+                                    <DataTrigger TargetType="ImageButton" Binding="{Binding IsMuted}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#4DF0616D" />
+                                    </DataTrigger>
+                                </ImageButton.Triggers>
+                            </ImageButton>
+                            <Label Text="{Binding MuteText}" Style="{StaticResource Caption}" HorizontalOptions="Center" />
                         </VerticalStackLayout>
                         <VerticalStackLayout Grid.Column="2" Spacing="6">
-                            <ImageButton Source="ic_vol_up.png" Style="{StaticResource RoundButton}"
-                                         SemanticProperties.Description="Sesi artır" Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeUp}" />
+                            <ImageButton Source="ic_vol_up.png" Style="{StaticResource RoundButton}" WidthRequest="72" HeightRequest="72" CornerRadius="36" Padding="22"
+                                         IsEnabled="{Binding VolumeEnabled}" SemanticProperties.Description="Sesi artır"
+                                         Command="{Binding SendMediaCommand}" CommandParameter="{x:Static protocol:MediaCommand.VolumeUp}" />
                             <Label Text="Artır" Style="{StaticResource Caption}" HorizontalOptions="Center" />
                         </VerticalStackLayout>
                     </Grid>
                 </VerticalStackLayout>
+            </Border>
+
+            <!-- Result of the last press: "delivered to Windows" or an error, never a claimed success -->
+            <Border StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="14,10" BackgroundColor="#263FCF8E"
+                    IsVisible="{Binding Feedback, Converter={StaticResource NotNullConverter}}">
+                <Border.Triggers>
+                    <DataTrigger TargetType="Border" Binding="{Binding FeedbackIsError}" Value="True">
+                        <Setter Property="BackgroundColor" Value="#26F5B841" />
+                    </DataTrigger>
+                </Border.Triggers>
+                <Label Text="{Binding Feedback}" FontSize="13" HorizontalTextAlignment="Center" />
             </Border>
         </VerticalStackLayout>
     </ScrollView>

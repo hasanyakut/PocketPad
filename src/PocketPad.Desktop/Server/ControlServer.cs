@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PocketPad.Desktop.Input;
+using PocketPad.Desktop.Media;
 using PocketPad.Desktop.Security;
 using PocketPad.Shared.Protocol;
 
@@ -24,7 +25,8 @@ internal sealed record ServerContext(
     SessionRegistry Registry,
     InputDispatcher Input,
     TimeProvider Time,
-    ILogger Logger);
+    ILogger Logger,
+    MediaStatusPublisher? Media = null);
 
 /// <summary>Kestrel hosted WSS endpoint, running inside the WPF process (current Windows user session).</summary>
 public sealed class ControlServer : IAsyncDisposable
@@ -46,11 +48,12 @@ public sealed class ControlServer : IAsyncDisposable
         SessionRegistry registry,
         InputDispatcher input,
         TimeProvider time,
-        ILogger<ControlServer> logger)
+        ILogger<ControlServer> logger,
+        MediaStatusPublisher? media = null)
     {
         _certificates = certificates;
         _logger = logger;
-        _ctx = new ServerContext(options, identity, pairing, devices, approval, registry, input, time, logger);
+        _ctx = new ServerContext(options, identity, pairing, devices, approval, registry, input, time, logger, media);
         registry.ControlSessionChanged += (_, _) => input.Reset();
         devices.Changed += (_, _) => DropRemovedDevices();
     }
@@ -101,6 +104,7 @@ public sealed class ControlServer : IAsyncDisposable
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
         Port = address is not null ? new Uri(address.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost")).Port : _ctx.Options.Port;
         _logger.LogInformation("PocketPad server listening on port {Port}.", Port);
+        _ctx.Media?.Start();
 
         if (_ctx.Options.DiscoveryPort > 0)
         {
@@ -121,6 +125,8 @@ public sealed class ControlServer : IAsyncDisposable
         var app = _app;
         if (app is null) return;
         _app = null;
+
+        if (_ctx.Media is not null) await _ctx.Media.DisposeAsync().ConfigureAwait(false);
 
         if (_discovery is not null)
         {

@@ -15,6 +15,12 @@ public interface IConnectionService
     /// <summary>Raised on a background thread whenever state or the paired list changes.</summary>
     event EventHandler? Changed;
 
+    /// <summary>Messages pushed by the PC (e.g. media status). Raised on a background thread.</summary>
+    event EventHandler<ProtocolMessage>? MessageReceived;
+
+    /// <summary>Latest media status from the PC of the current connection, or null (none yet / not connected).</summary>
+    MediaStatusMessage? LastMediaStatus { get; }
+
     Task InitializeAsync();
     Task<PairedServer> PairAsync(PairingQrPayload qr, CancellationToken cancellationToken);
     Task ConnectAsync(PairedServer server);
@@ -38,8 +44,19 @@ public sealed class ConnectionService : IConnectionService
         _client = client;
         _store = store;
         _deviceInfo = deviceInfo;
-        _client.StateChanged += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+        _client.StateChanged += (_, e) =>
+        {
+            if (e.State != ConnectionState.Connected) LastMediaStatus = null;
+            Changed?.Invoke(this, EventArgs.Empty);
+        };
+        _client.MessageReceived += (_, message) =>
+        {
+            if (message is MediaStatusMessage media) LastMediaStatus = media;
+            MessageReceived?.Invoke(this, message);
+        };
     }
+
+    public MediaStatusMessage? LastMediaStatus { get; private set; }
 
     public ConnectionState State => _client.State;
     public ConnectionFailure LastFailure => _client.LastFailure;
@@ -48,6 +65,7 @@ public sealed class ConnectionService : IConnectionService
     public IReadOnlyList<PairedServer> PairedServers => _servers;
 
     public event EventHandler? Changed;
+    public event EventHandler<ProtocolMessage>? MessageReceived;
 
     private string DeviceName => string.IsNullOrWhiteSpace(_deviceInfo.Name) ? $"{_deviceInfo.Manufacturer} {_deviceInfo.Model}" : _deviceInfo.Name;
 

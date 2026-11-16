@@ -33,6 +33,7 @@ public static class MauiProgram
         services.AddSingleton(SecureStorage.Default);
         services.AddSingleton(DeviceInfo.Current);
         services.AddSingleton(Preferences.Default);
+        services.AddSingleton(HapticFeedback.Default);
 
         // Connection
         services.AddSingleton(new ClientOptions());

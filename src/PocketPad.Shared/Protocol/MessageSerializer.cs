@@ -53,6 +53,8 @@ public static class MessageSerializer
         Register("keyboard.text", ctx.KeyboardTextMessage);
         Register("keyboard.key", ctx.KeyboardKeyMessage);
         Register("media.command", ctx.MediaCommandMessage);
+        Register("media.status", ctx.MediaStatusMessage);
+        Register("media.result", ctx.MediaCommandResultMessage);
     }
 
     private static void Register<T>(string name, JsonTypeInfo<T> info) where T : ProtocolMessage
@@ -146,6 +148,8 @@ public static class MessageSerializer
 [JsonSerializable(typeof(KeyboardTextMessage))]
 [JsonSerializable(typeof(KeyboardKeyMessage))]
 [JsonSerializable(typeof(MediaCommandMessage))]
+[JsonSerializable(typeof(MediaStatusMessage))]
+[JsonSerializable(typeof(MediaCommandResultMessage))]
 [JsonSerializable(typeof(Pairing.PairedServer))]
 [JsonSerializable(typeof(List<Pairing.PairedServer>))]
 public sealed partial class ProtocolJsonContext : JsonSerializerContext;
